@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Video Transcoder App</title>
+    <link rel="stylesheet" href="https://dwacwh3x8g8aw.cloudfront.net/styles.css" />
+  </head>
+  <body>
+    <div class="background-image"></div>
+    <div class="container">
+      <h1>Your Gateway to Effortless Video Conversion!</h1>
+
+      <!-- Registration Form -->
+      <form id="registerForm">
+        <input
+          type="text"
+          id="registerUsername"
+          placeholder="Username"
+          required
+        />
+        <input
+          type="password"
+          id="registerPassword"
+          placeholder="Password"
+          required
+        />
+        <div id="passwordRequirements" class="validation">
+          <p id="length" class="invalid">
+            Password must be at least 8 characters
+          </p>
+          <p id="number" class="invalid">
+            Password must contain at least 1 digit
+          </p>
+          <p id="special" class="invalid">
+            Password must contain at least 1 special character
+          </p>
+          <p id="uppercase" class="invalid">
+            Password must contain at least 1 uppercase letter
+          </p>
+          <p id="lowercase" class="invalid">
+            Password must contain at least 1 lowercase letter
+          </p>
+        </div>
+        <button type="submit">Register</button>
+      </form>
+
+      <!-- Login Form -->
+      <form id="loginForm">
+        <input type="text" id="username" placeholder="Username" required />
+        <input type="password" id="password" placeholder="Password" required />
+        <button type="submit">Login</button>
+      </form>
+
+      <!-- File Upload Form -->
+      <form id="uploadForm" enctype="multipart/form-data" style="display: none">
+        <input type="file" id="video" name="video" required />
+        <button id="transcodeNormal" type="button">Upload and Transcode</button>
+      </form>
+
+      <!-- Loading Indicator -->
+      <div id="loadingIndicator" style="display: none">
+        <div class="spinner"></div>
+        <p>Transcoding in progress...</p>
+        <p>Progress: <span id="progressPercentage">0</span>%</p>
+      </div>
+
+      <!-- User Information Display Section -->
+      <div id="user-section" style="display: none">
+        <p id="userGroupDisplay"></p>
+        <button id="logoutButton">Logout</button>
+      </div>
+
+      <!-- Download URL Section -->
+      <div id="downloadUrlSection" style="display: none">
+        <h2>Download Your Video</h2>
+        <a id="downloadUrl" href="" target="_blank" class="download-button">Download Link</a>
+      </div>
+    </div>
+
+    <script>
+      // Check for token and auto-login if token exists
+      document.addEventListener("DOMContentLoaded", async function () {
+        const token = localStorage.getItem("token");
+        console.log("Checking for token...");
+        if (token) {
+          const response = await fetch("/api/user", {
+            method: "GET",
+            headers: { Authorization: `Bearer ${token}` },
+          });
+          console.log("Token found. Sending request to /api/user...");
+          if (response.ok) {
+            const userData = await response.json();
+            const userGroup = userData.group; // Assume the returned user data contains a group
+            console.log("User authenticated successfully.");
+            document.getElementById("loginForm").style.display = "none";
+            document.getElementById("registerForm").style.display = "none";
+            document.getElementById("uploadForm").style.display = "block";
+            document.getElementById("user-section").style.display = "block";
+            document.getElementById("userGroupDisplay").innerText = `User Group: ${userGroup}`; // Display user group
+            localStorage.setItem("userGroup", userGroup); // Store user group
+            showUserSpecificContent(userGroup);
+          } else {
+            console.log("Invalid token. Removing from localStorage.");
+            localStorage.removeItem("token");
+            showAuthForms();
+          }
+        } else {
+          console.log("No token found. Showing authentication forms.");
+          showAuthForms();
+        }
+      });
+
+      function showAuthForms() {
+        document.getElementById("loginForm").style.display = "block";
+        document.getElementById("registerForm").style.display = "block";
+      }
+
+      // Password validation
+      function validatePassword(password) {
+        const length = password.length >= 8;
+        const number = /\d/.test(password);
+        const special = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+        const uppercase = /[A-Z]/.test(password);
+        const lowercase = /[a-z]/.test(password);
+
+        document.getElementById("length").className = length ? "valid" : "invalid";
+        document.getElementById("number").className = number ? "valid" : "invalid";
+        document.getElementById("special").className = special ? "valid" : "invalid";
+        document.getElementById("uppercase").className = uppercase ? "valid" : "invalid";
+        document.getElementById("lowercase").className = lowercase ? "valid" : "invalid";
+      }
+
+      document.getElementById("registerPassword").addEventListener("input", function () {
+        validatePassword(this.value);
+      });
+
+      document.getElementById("registerForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const username = document.getElementById("registerUsername").value;
+        const password = document.getElementById("registerPassword").value;
+        console.log(`Registering user: ${username}`);
+        const response = await fetch("/api/register", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        if (response.ok) {
+          alert("Registration successful!");
+          console.log("Registration successful.");
+        } else {
+          const errorText = await response.text();
+          alert(`Registration failed! Error: ${errorText}`);
+          console.error("Registration failed:", errorText);
+        }
+      });
+
+      document.getElementById("loginForm").addEventListener("submit", async function (e) {
+        e.preventDefault();
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+        console.log(`Logging in user: ${username}`);
+        const response = await fetch("/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ username, password }),
+        });
+        if (response.ok) {
+          const { token, group } = await response.json(); // Assume the returned object contains a group
+          localStorage.setItem("token", token);
+          localStorage.setItem("userGroup", group); // Store user group
+          console.log("User Group:", group); // Output user group
+          console.log("Login successful. Token received.");
+          document.getElementById("loginForm").style.display = "none";
+          document.getElementById("registerForm").style.display = "none";
+          document.getElementById("uploadForm").style.display = "block";
+          document.getElementById("user-section").style.display = "block";
+          document.getElementById("userGroupDisplay").innerText = `User Group: ${group}`; // Display user group
+          showUserSpecificContent(group);
+        } else {
+          const errorText = await response.text();
+          alert(`Login failed! Error: ${errorText}`);
+          console.error("Login failed:", errorText);
+        }
+      });
+      
+
+      document.getElementById("transcodeNormal").addEventListener("click", async function () {
+    const videoInput = document.getElementById("video");
+    if (videoInput.files.length > 0) {
+        const formData = new FormData();
+        formData.append("video", videoInput.files[0]);
+        document.getElementById("loadingIndicator").style.display = "block";
+        document.getElementById("downloadUrlSection").style.display = "none"; 
+        
+        // Get the filename (without extension)
+        const videoName = videoInput.files[0].name.replace(/\.[^/.]+$/, "");
+        console.log("Processing video:", videoName);
+        
+        // Use the new progress tracking URL format
+        const eventSource = new EventSource(
+            `https://n11368853-web.cab432.com/api/transcode/progress/${videoName}`
+          );
+        eventSource.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            console.log("Progress update:", data);
+            
+            switch (data.status) {
+                case 'error':
+                    document.getElementById("progressPercentage").textContent = "Error: " + data.error;
+                    document.getElementById("loadingIndicator").style.display = "none";
+                    eventSource.close();
+                    break;
+                    
+                case 'completed':
+                    document.getElementById("progressPercentage").textContent = "100";
+                    document.getElementById("loadingIndicator").style.display = "none";
+                    if (data.downloadUrl) {
+                        document.getElementById("downloadUrl").href = data.downloadUrl;
+                        document.getElementById("downloadUrlSection").style.display = "block";
+                    }
+                    eventSource.close();
+                    alert("Transcoding completed successfully!");
+                    break;
+                    
+                case 'processing':
+                default:
+                    document.getElementById("progressPercentage").textContent = data.progress.toFixed(1);
+                    break;
+            }
+        };
+
+        eventSource.onerror = function(error) {
+            console.error("EventSource failed:", error);
+            document.getElementById("loadingIndicator").style.display = "none";
+            eventSource.close();
+            alert("Lost connection to server. Please check your video status.");
+        };
+
+        try {
+          const response = await fetch("https://n11368853-web.cab432.com/api/transcode/normal", {
+              method: "POST",
+              body: formData,
+              headers: {
+                Authorization: `Bearer ${localStorage.getItem("token")}`,
+              },
+            });
+
+            if (response.ok) {
+                const result = await response.json();
+                console.log("Server response:", result);
+                
+                if (result.status === "queued") {
+                    console.log("Video queued for processing:", result.videoName);
+                } else {
+                    console.error("Unexpected response status:", result.status);
+                }
+            } else {
+                const errorText = await response.text();
+                alert(`Transcoding failed! Error: ${errorText}`);
+                console.error("Transcoding failed:", errorText);
+                document.getElementById("loadingIndicator").style.display = "none";
+                eventSource.close();
+            }
+        } catch (err) {
+            console.error("Request error:", err);
+            alert("Error sending transcoding request");
+            document.getElementById("loadingIndicator").style.display = "none";
+            eventSource.close();
+        }
+    } else {
+        alert("Please select a video file to upload.");
+    }
+});
+      document.getElementById("logoutButton").addEventListener("click", function () {
+        localStorage.removeItem("token");
+        localStorage.removeItem("userGroup"); // Clear user groups
+        alert("You have logged out successfully.");
+        location.reload(); // Reload the page to reset the UI
+      });
+
+      function showUserSpecificContent(group) {
+        // Logic to show/hide content based on user group
+        if (group === 'premium') {
+          // Show premium features
+          console.log("Premium features enabled.");
+        } else {
+          // Show basic features
+          console.log("Basic features enabled.");
+        }
+      }
+    </script>
+  </body>
+</html>
