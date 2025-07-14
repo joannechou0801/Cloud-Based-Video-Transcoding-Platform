@@ -7,7 +7,7 @@ This project is a cloud-based video transcoding platform consisting of two main 
 * **Auth Service**: Provides user authentication and management using AWS Cognito.
 * **Transcoding Service**: Handles user video uploads, performs transcoding using FFmpeg, and stores the results on AWS S3.
 
-Additionally, the project leverages AWS services (EC2, ALB, S3, SQS, DynamoDB, CloudFront) for the overall architecture and uses Terraform for Infrastructure as Code.
+The project leverages AWS services (EC2, ALB, S3, SQS, DynamoDB, CloudFront) for the overall architecture and uses Terraform for Infrastructure as Code.
 
 ---
 

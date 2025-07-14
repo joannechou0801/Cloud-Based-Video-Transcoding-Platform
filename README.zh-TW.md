@@ -7,7 +7,7 @@
 * **Auth Service**：使用 AWS Cognito 提供用戶身份認證與管理功能。
 * **Transcoding Service**：負責接收用戶影片，使用 FFmpeg 進行轉碼，並將結果上傳至 AWS S3 儲存。
 
-此外，本專案使用 AWS 相關服務（EC2、ALB、S3、SQS、DynamoDB、CloudFront）進行整體架構搭建，並以 Terraform 實現基礎設施即程式碼（Infrastructure as Code）。
+本專案使用 AWS 相關服務（EC2、ALB、S3、SQS、DynamoDB、CloudFront）進行整體架構搭建，並以 Terraform 實現基礎設施即程式碼（Infrastructure as Code）。
 
 ---
 
