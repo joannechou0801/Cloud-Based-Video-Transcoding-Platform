@@ -32,6 +32,10 @@ AWS 其他服務：
 - CloudFront：用於靜態資源快取與加速
 ```
 
+![系統架構圖](./docs/architecture-diagram.jpg)
+
+> 此架構圖完整呈現了本影片轉碼平台的運作流程，涵蓋 ALB、EC2、S3、SQS、Cognito、CloudFront 與 DynamoDB 等 AWS 元件，與實作內容相符。
+
 ---
 
 ## 主要功能說明

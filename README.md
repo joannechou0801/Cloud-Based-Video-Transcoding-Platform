@@ -32,6 +32,10 @@ Other AWS Services:
 - CloudFront: Caches and accelerates static assets
 ```
 
+![System Architecture Diagram](./docs/architecture-diagram.jpg)
+
+> This architecture diagram illustrates the end-to-end flow of the video transcoding platform, including services like ALB, EC2, SQS, S3, Cognito, CloudFront, and DynamoDB. It reflects the actual implementation of this project.
+
 ---
 
 ## Key Features
